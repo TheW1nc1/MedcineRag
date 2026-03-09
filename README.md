@@ -16,7 +16,7 @@
 ![系统界面](img/system.png)
 
 - 数据库管理界面
-![数据库管理](img/image%20copy.png)
+![数据库管理](img/database.png)
 
 - 测试是否成功导入
 ![测试界面](img/test.png)
