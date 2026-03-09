@@ -12,11 +12,21 @@
 
 ### 运行截图
 
+- 系统界面
 ![系统界面](img/system.png)
+
+- 数据库管理界面
+![数据库管理](img/image%20copy.png)
+
+- 测试是否成功导入
 ![测试界面](img/test.png)
+
+- 操作指南
 ![操作指南](img/howtouse.png)
-![功能完成](img/finish.png)
-![数据库管理](img/database_Manage.png)
+
+- 功能完成
+![功能完成](img/image.png)
+
 
 ## 核心接口功能
 
