@@ -25,7 +25,7 @@
 ![操作指南](img/howtouse.png)
 
 - 功能完成
-![功能完成](img/image.png)
+![功能完成](img/finish.png)
 
 
 ## 核心接口功能
