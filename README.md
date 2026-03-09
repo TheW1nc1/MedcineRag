@@ -10,6 +10,14 @@
 - 知识库可支持多种格式和图片展示等辅助功能
 - 实现基于医药问答的智能问答交互
 
+### 运行截图
+
+![系统界面](img/system.png)
+![测试界面](img/test.png)
+![操作指南](img/howtouse.png)
+![功能完成](img/finish.png)
+![数据库管理](img/database_Manage.png)
+
 ## 核心接口功能
 
 系统提供了完整的知识库管理和问答接口：
