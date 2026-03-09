@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>智能医药问答系统</title>
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --user-msg-bg: #dcf8c6;
+            --bot-msg-bg: #f1f0f0;
+            --bg-color: #f4f4f9;
+            --text-color: #333;
+            --container-bg: #fff;
+            --border-color: #ddd;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: var(--text-color);
+        }
+        #chat-container {
+            width: 80%;
+            max-width: 900px;
+            height: 90vh;
+            background-color: var(--container-bg);
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+        #chat-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 1.3em;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #chat-window {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .message { margin-bottom: 15px; line-height: 1.5; }
+        .user-message { text-align: right; }
+        .user-message .message-content {
+            background-color: var(--user-msg-bg);
+            padding: 10px 15px;
+            border-radius: 18px 18px 5px 18px;
+            display: inline-block;
+            max-width: 75%;
+        }
+        .bot-message .message-content {
+            background-color: var(--bot-msg-bg);
+            padding: 10px 15px;
+            border-radius: 18px 18px 18px 5px;
+            display: inline-block;
+            max-width: 75%;
+        }
+        .message-sender { font-weight: bold; font-size: 0.9em; margin-bottom: 5px; }
+        #input-area {
+            display: flex;
+            padding: 15px;
+            align-items: center;
+        }
+        #message-input {
+            flex-grow: 1;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 12px 18px;
+            font-size: 1em;
+            outline: none;
+        }
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin-left: 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        button:hover { background-color: #357ABD; }
+        button:active { transform: scale(0.98); }
+        .typing-indicator { color: #999; font-style: italic; }
+        .header-button { font-size: 0.8em; padding: 6px 12px; border-radius: 15px; background-color: #ffffff44;}
+        #upload-form { display: none; margin-top: 10px; }
+        
+        #knowledge-modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 60%;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .input-group {
+            margin: 10px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .input-group textarea {
+            width: 100%;
+            height: 100px;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            resize: vertical;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+        }
+        .knowledge-controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .knowledge-controls button {
+            padding: 8px 15px;
+            font-size: 0.9em;
+        }
+        .knowledge-controls button.danger {
+            background-color: #E74C3C;
+        }
+        .knowledge-controls button.danger:hover {
+            background-color: #C0392B;
+        }
+        .knowledge-controls button.success {
+            background-color: #27AE60;
+        }
+        .knowledge-controls button.success:hover {
+            background-color: #229954;
+        }
+        .knowledge-controls button.warning {
+            background-color: #F39C12;
+        }
+        .knowledge-controls button.warning:hover {
+            background-color: #E67E22;
+        }
+        #knowledge-text {
+            width: 100%;
+            height: 200px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+            overflow-y: auto;
+        }
+        .file-info {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+    <div id="chat-header">
+        <span>智能医药问答系统</span>
+        <div>
+            <label for="upload-file" class="header-button" style="cursor: pointer;">上传文档</label>
+            <input type="file" id="upload-file" accept=".txt,.pdf,.docx,.doc" style="display: none;">
+            <button id="view-knowledge-btn" class="header-button">查看知识库</button>
+        </div>
+    </div>
+    <div id="chat-window">
+        <div class="message bot-message">
+            <div class="message-sender">AI助手</div>
+            <div class="message-content">您好！我是智能医药问答系统的AI助手。您可以向我咨询医药相关的问题，或上传医药文档（支持PDF、DOCX、DOC、TXT格式）来丰富知识库。</div>
+        </div>
+    </div>
+    <div id="input-area">
+        <input type="text" id="message-input" placeholder="请输入您的医药相关问题...">
+        <button id="send-button">发送</button>
+        <button id="stop-button" style="display: none; background-color: #E74C3C;">暂停</button>
+    </div>
+</div>
+
+<div id="knowledge-modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>知识库管理</h2>
+        
+        <!-- 知识库内容显示 -->
+        <div class="input-group">
+            <label>当前知识库内容：</label>
+            <div id="knowledge-text">加载中...</div>
+        </div>
+        
+        <!-- 知识库管理控制 -->
+        <div class="knowledge-controls">
+            <button id="add-knowledge-btn" class="success">添加内容</button>
+            <button id="update-knowledge-btn" class="warning">更新内容</button>
+            <button id="delete-knowledge-btn" class="danger">删除内容</button>
+            <button id="clear-knowledge-btn" class="danger">清空知识库</button>
+        </div>
+        
+        <!-- 添加内容表单 -->
+        <div id="add-form" style="display: none; margin-top: 15px;">
+            <div class="input-group">
+                <label>添加新内容：</label>
+                <textarea id="add-content" placeholder="请输入要添加的知识库内容..."></textarea>
+            </div>
+            <div class="knowledge-controls">
+                <button id="confirm-add-btn" class="success">确认添加</button>
+                <button id="cancel-add-btn">取消</button>
+            </div>
+        </div>
+        
+        <!-- 更新内容表单 -->
+        <div id="update-form" style="display: none; margin-top: 15px;">
+            <div class="input-group">
+                <label>原内容：</label>
+                <textarea id="old-content" placeholder="请输入要更新的原内容..."></textarea>
+            </div>
+            <div class="input-group">
+                <label>新内容：</label>
+                <textarea id="new-content" placeholder="请输入新的内容..."></textarea>
+            </div>
+            <div class="knowledge-controls">
+                <button id="confirm-update-btn" class="warning">确认更新</button>
+                <button id="cancel-update-btn">取消</button>
+            </div>
+        </div>
+        
+        <!-- 删除内容表单 -->
+        <div id="delete-form" style="display: none; margin-top: 15px;">
+            <div class="input-group">
+                <label>删除关键词：</label>
+                <input type="text" id="delete-keyword" placeholder="请输入要删除内容的关键词...">
+            </div>
+            <div class="knowledge-controls">
+                <button id="confirm-delete-btn" class="danger">确认删除</button>
+                <button id="cancel-delete-btn">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    const chatWindow = document.getElementById('chat-window');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const stopButton = document.getElementById('stop-button');
+    const uploadFile = document.getElementById('upload-file');
+    const viewKnowledgeBtn = document.getElementById('view-knowledge-btn');
+    const knowledgeModal = document.getElementById('knowledge-modal');
+    const knowledgeText = document.getElementById('knowledge-text');
+    const closeButton = document.querySelector('.close-button');
+
+    // 知识库管理相关元素
+    const addKnowledgeBtn = document.getElementById('add-knowledge-btn');
+    const updateKnowledgeBtn = document.getElementById('update-knowledge-btn');
+    const deleteKnowledgeBtn = document.getElementById('delete-knowledge-btn');
+    const clearKnowledgeBtn = document.getElementById('clear-knowledge-btn');
+    
+    const addForm = document.getElementById('add-form');
+    const updateForm = document.getElementById('update-form');
+    const deleteForm = document.getElementById('delete-form');
+    
+    const addContent = document.getElementById('add-content');
+    const oldContent = document.getElementById('old-content');
+    const newContent = document.getElementById('new-content');
+    const deleteKeyword = document.getElementById('delete-keyword');
+    
+    const confirmAddBtn = document.getElementById('confirm-add-btn');
+    const confirmUpdateBtn = document.getElementById('confirm-update-btn');
+    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+    const clearKnowledgeConfirmBtn = document.getElementById('clear-knowledge-btn');
+    
+    const cancelAddBtn = document.getElementById('cancel-add-btn');
+    const cancelUpdateBtn = document.getElementById('cancel-update-btn');
+    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+
+    let abortController = null;
+
+    // --- Event Listeners ---
+    sendButton.addEventListener('click', sendMessage);
+    stopButton.addEventListener('click', stopGeneration);
+    messageInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !messageInput.disabled) sendMessage();
+    });
+    uploadFile.addEventListener('change', handleFileUpload);
+    viewKnowledgeBtn.addEventListener('click', viewKnowledge);
+    closeButton.addEventListener('click', () => knowledgeModal.style.display = "none");
+    window.addEventListener('click', (event) => {
+        if (event.target == knowledgeModal) {
+            knowledgeModal.style.display = "none";
+        }
+    });
+
+    // 知识库管理事件监听器
+    addKnowledgeBtn.addEventListener('click', () => showForm('add'));
+    updateKnowledgeBtn.addEventListener('click', () => showForm('update'));
+    deleteKnowledgeBtn.addEventListener('click', () => showForm('delete'));
+    clearKnowledgeBtn.addEventListener('click', clearKnowledge);
+    
+    confirmAddBtn.addEventListener('click', addKnowledge);
+    confirmUpdateBtn.addEventListener('click', updateKnowledge);
+    confirmDeleteBtn.addEventListener('click', deleteKnowledge);
+    
+    cancelAddBtn.addEventListener('click', () => hideAllForms());
+    cancelUpdateBtn.addEventListener('click', () => hideAllForms());
+    cancelDeleteBtn.addEventListener('click', () => hideAllForms());
+
+    // --- Core Functions ---
+    async function sendMessage() {
+        const message = messageInput.value.trim();
+        if (message === '') return;
+
+        addMessage('您', message, 'user-message');
+        messageInput.value = '';
+        toggleButtons(true);
+        
+        abortController = new AbortController(); // Create a new controller for each request
+
+        const botMessageContent = addMessage('AI助手', '', 'bot-message');
+        
+         try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message }),
+                signal: abortController.signal // Link the request to the controller
+            });
+            
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+
+            let isCancelled = false;
+            abortController.signal.addEventListener('abort', () => {
+                isCancelled = true;
+                console.log("Fetch aborted.");
+            });
+
+            function processText({ done, value }) {
+                if (done || isCancelled) {
+                    toggleButtons(false);
+                    if(isCancelled) {
+                        botMessageContent.textContent += ' [已暂停]';
+                    }
+                    return;
+                }
+                const chunk = decoder.decode(value, { stream: true });
+                const parts = chunk.split('\n');
+                
+                parts.forEach(part => {
+                    if (part.startsWith('data:')) {
+                        const data = part.substring(5).trim();
+                         if(data) {
+                            try {
+                               // SSE sends data chunks, not full JSON objects per chunk
+                               botMessageContent.textContent += data;
+                            } catch (e) {
+                                console.error("Error parsing JSON from stream:", data);
+                            }
+                         }
+                    }
+                });
+                
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+                return reader.read().then(processText);
+            }
+            
+            reader.read().then(processText);
+
+        } catch(e) {
+             if (e.name === 'AbortError') {
+                console.log('Stream reading aborted.');
+             } else {
+                botMessageContent.textContent += '\n\n[发生错误，连接已断开]';
+                toggleButtons(false);
+             }
+        }
+
+    }
+
+    function stopGeneration() {
+        if (abortController) {
+            abortController.abort();
+            toggleButtons(false);
+        }
+    }
+
+    async function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // 检查文件类型
+        const allowedTypes = ['.txt', '.pdf', '.docx', '.doc'];
+        const fileName = file.name.toLowerCase();
+        const isValidType = allowedTypes.some(type => fileName.endsWith(type));
+        
+        if (!isValidType) {
+            alert('请选择支持的文件格式：TXT、PDF、DOCX、DOC');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+            const result = await response.json();
+            alert(result.message || '上传成功');
+        } catch (error) {
+            console.error('Upload failed:', error);
+            alert('上传失败');
+        }
+    }
+
+    async function viewKnowledge() {
+        knowledgeModal.style.display = "block";
+        knowledgeText.textContent = "加载中...";
+        try {
+            const response = await fetch('/api/knowledge');
+            const data = await response.json();
+            knowledgeText.textContent = data.content || "知识库为空或加载失败。";
+        } catch (error) {
+            knowledgeText.textContent = "无法加载知识库内容。";
+        }
+    }
+
+    // 知识库管理功能
+    function showForm(formType) {
+        hideAllForms();
+        switch(formType) {
+            case 'add':
+                addForm.style.display = 'block';
+                break;
+            case 'update':
+                updateForm.style.display = 'block';
+                break;
+            case 'delete':
+                deleteForm.style.display = 'block';
+                break;
+        }
+    }
+
+    function hideAllForms() {
+        addForm.style.display = 'none';
+        updateForm.style.display = 'none';
+        deleteForm.style.display = 'none';
+        
+        // 清空表单内容
+        addContent.value = '';
+        oldContent.value = '';
+        newContent.value = '';
+        deleteKeyword.value = '';
+    }
+
+    async function addKnowledge() {
+        const content = addContent.value.trim();
+        if (!content) {
+            alert('请输入要添加的内容');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/knowledge/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: content })
+            });
+            const result = await response.json();
+            alert(result.message);
+            if (response.ok) {
+                hideAllForms();
+                viewKnowledge(); // 刷新知识库显示
+            }
+        } catch (error) {
+            alert('添加失败：' + error.message);
+        }
+    }
+
+    async function updateKnowledge() {
+        const oldText = oldContent.value.trim();
+        const newText = newContent.value.trim();
+        
+        if (!oldText || !newText) {
+            alert('请输入原内容和新内容');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/knowledge/update', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    oldContent: oldText, 
+                    newContent: newText 
+                })
+            });
+            const result = await response.json();
+            alert(result.message);
+            if (response.ok) {
+                hideAllForms();
+                viewKnowledge(); // 刷新知识库显示
+            }
+        } catch (error) {
+            alert('更新失败：' + error.message);
+        }
+    }
+
+    async function deleteKnowledge() {
+        const keyword = deleteKeyword.value.trim();
+        if (!keyword) {
+            alert('请输入要删除的关键词');
+            return;
+        }
+
+        if (!confirm(`确定要删除包含"${keyword}"的内容吗？`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/knowledge/delete', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keyword: keyword })
+            });
+            const result = await response.json();
+            alert(result.message);
+            if (response.ok) {
+                hideAllForms();
+                viewKnowledge(); // 刷新知识库显示
+            }
+        } catch (error) {
+            alert('删除失败：' + error.message);
+        }
+    }
+
+    async function clearKnowledge() {
+        if (!confirm('确定要清空整个知识库吗？此操作不可恢复！')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/knowledge/clear', {
+                method: 'DELETE'
+            });
+            const result = await response.json();
+            alert(result.message);
+            if (response.ok) {
+                viewKnowledge(); // 刷新知识库显示
+            }
+        } catch (error) {
+            alert('清空失败：' + error.message);
+        }
+    }
+
+    // --- UI Helper Functions ---
+    function addMessage(sender, content, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', type);
+
+        const senderDiv = document.createElement('div');
+        senderDiv.classList.add('message-sender');
+        senderDiv.textContent = sender;
+
+        const contentDiv = document.createElement('div');
+        contentDiv.classList.add('message-content');
+        contentDiv.textContent = content;
+
+        messageDiv.appendChild(senderDiv);
+        messageDiv.appendChild(contentDiv);
+        chatWindow.appendChild(messageDiv);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+        return contentDiv;
+    }
+
+    function toggleButtons(isGenerating) {
+        sendButton.style.display = isGenerating ? 'none' : 'inline-block';
+        stopButton.style.display = isGenerating ? 'inline-block' : 'none';
+        messageInput.disabled = isGenerating;
+    }
+</script>
+
+</body>
+</html> 
